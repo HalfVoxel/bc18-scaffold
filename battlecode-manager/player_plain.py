@@ -47,7 +47,8 @@ class PlainPlayer(AbstractPlayer):
         else:
             args = ['sh', os.path.join(self.working_dir, 'run.sh')]
             # Path needs to be passed through, otherwise some compilers (e.g gcc) can get confused and not find things
-            env = {'PATH': os.environ['PATH']}
+            # It's also nice for the player to be able to pass custom environment variables to scripts
+            env = dict(os.environ)
 
         env['PLAYER_KEY'] = str(self.player_key)
         env['RUST_BACKTRACE'] = '1'

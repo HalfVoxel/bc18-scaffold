@@ -19,7 +19,7 @@ replay_extension = ".bc18"
 color_red = "\033[31m"
 color_reset = "\033[0m"
 
-def run_game(map_path, player1dir, player2dir, replay_dir, docker, terminal_viewer, extra_delay, max_memory, initial_time, per_frame_time, proxy_test):
+def run_game(map_path, player1dir, player2dir, replay_dir, docker, terminal_viewer, extra_delay, max_memory, initial_time, per_frame_time, proxy_test, working_dir):
     args = {}
     args['dir_p1'] = player1dir
     args['dir_p2'] = player2dir
@@ -35,6 +35,7 @@ def run_game(map_path, player1dir, player2dir, replay_dir, docker, terminal_view
     args['extra_delay'] = extra_delay
     args['map_name'] = map_path
     args['map'] = cli.get_map(map_path)
+    args['working_dir'] = working_dir
 
     if terminal_viewer and sys.platform == 'win32' and not CINIT:
         print('To get pretty output with -tv on windows, run `py -3 -m pip install colorama`')
@@ -83,6 +84,7 @@ parser.add_argument('--unlimited-time', action='store_const', const=True, defaul
 parser.add_argument('-tv', '--terminal-viewer', action='store_const', const=True, default=False, help="Print game images in the terminal.")
 parser.add_argument('-ed', '--extra-delay', type=int, default=0, help="add extra delay after each turn (make -tv slower)")
 parser.add_argument('--proxy-test', action='store_true', help="do some useless nonsense")
+parser.add_argument('--working-dir', help="Working directory.", default=None, required=False)
 
 args = parser.parse_args()
 map_path = args.map
@@ -155,7 +157,8 @@ try:
         max_memory=args.mem,
         initial_time=initial_time,
         per_frame_time=per_frame_time,
-        proxy_test=args.proxy_test
+        proxy_test=args.proxy_test,
+        working_dir=args.working_dir
     )
 except KeyboardInterrupt:
     print("Game Stopped")

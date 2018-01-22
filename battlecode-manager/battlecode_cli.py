@@ -13,6 +13,7 @@ from player_sandboxed import SandboxedPlayer
 import server
 import battlecode as bc
 import threading
+import hashlib
 
 try:
     import ujson as json
@@ -78,7 +79,7 @@ def run_game(game, dockers, args, sock_file, scrimmage=False):
     # Start the unix stream server
     main_server = server.start_server(sock_file, game, dockers)
 
-    viewer_server = server.start_viewer_server(PORT, game)
+    viewer_server = None  # server.start_viewer_server(PORT, game)
 
     try:
         # Start the docker instances
@@ -224,22 +225,31 @@ def create_game(args):
                        extra_delay=args['extra_delay'],
                        map_name=args['map_name'])
 
-    working_dir = abspath("working_dir")
+    working_dir = None
+    if "working_dir" in args:
+        working_dir = args["working_dir"]
+    if working_dir is None:
+        working_dir = abspath("working_dir")
+
     prepare_working_directory(working_dir)
 
     # pick server location
     if 'USE_TCP' in os.environ or sys.platform == 'win32':
-        print('Running game server on port tcp://localhost:16148')
+        port = 16148
+        print('Running game server on port tcp://localhost:' + str(port))
         # int indicates tcp
-        sock_file = ('localhost', 16148)
+        sock_file = ('localhost', port)
     else:
         # Find a good filename to use as socket file
+        # If multiple games are running in parallel then offset the name based on the hash of the working directory
+        workingHash = int(hashlib.sha256(working_dir.encode('utf-8')).hexdigest(), 16) % 10000
         for index in range(10000):
-            sock_file = "/tmp/battlecode-" + str(index)
+            sock_file = "/tmp/battlecode-" + str(index+workingHash)
             if not os.path.exists(sock_file):
                 break
         else:
             raise Exception("Do you really have 10000 /tmp/battlecode sockets???")
+
         print('Running game server on socket unix://{}'.format(sock_file))
 
     # Assign the docker instances client ids
