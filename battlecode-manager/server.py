@@ -252,7 +252,6 @@ class Game(object): # pylint: disable=too-many-instance-attributes
                     print(line)
 
         if self.extra_delay:
-            import time
             time.sleep(self.extra_delay / 1000.)
 
         # Increment to the next player
@@ -581,6 +580,8 @@ def create_receive_handler(game: Game, dockers, use_docker: bool,
                     running_stats["bld"] = False
 
                 if self.game.initialized <= 3:
+                    # Refresh the process tree here, then assume it is going to stay the same for performance reasons
+                    my_sandbox.refreshProcessChildren()
                     my_sandbox.unpause()
                     self.send_message(start_turn_msg)
                     self.game.initialized += 1
