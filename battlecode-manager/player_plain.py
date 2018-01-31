@@ -28,10 +28,8 @@ class PlainPlayer(AbstractPlayer):
     def stream_logs(self, stdout=True, stderr=True, line_action=lambda line: print(line.decode())):
         assert not self.streaming
         self.streaming = True
-        if stdout:
-            threading.Thread(target=self._stream_logs, args=(self.process.stdout, line_action), daemon=True).start()
-        if stderr:
-            threading.Thread(target=self._stream_logs, args=(self.process.stderr, line_action), daemon=True).start()
+        self.line_action = line_action
+        self.stream = self.process.stdout
 
     def _stream_logs(self, stream, line_action):
         for line in stream:
@@ -61,7 +59,7 @@ class PlainPlayer(AbstractPlayer):
             env['SOCKET_FILE'] = self.socket_file
 
         cwd = self.working_dir
-        self.process = psutil.Popen(args, env=env, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=-1)
+        self.process = psutil.Popen(args, env=env, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=-1)
 
     def guess_language(self):
         children = self.process.children(recursive=True)
@@ -97,6 +95,21 @@ class PlainPlayer(AbstractPlayer):
         if self.paused:
             resume(self.recursiveProcs)
             self.paused = False
+
+    def flush_logs(self):
+        if self.process is None or not self.streaming:
+            return
+        print("flush_logs")
+        if hasattr(self.stream, 'read1'):
+            data = self.stream.read1(8192)
+        else:
+            data = self.stream.read(8192)
+        if data and data[-1] == '\n':
+            data = data[:-1]
+        data = data.decode()
+        for line in data.split('\n'):
+            self.line_action((line + '\n').encode())
+        print("done")
 
     def destroy(self):
         if self.process is not None:

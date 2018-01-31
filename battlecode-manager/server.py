@@ -600,6 +600,7 @@ def create_receive_handler(game: Game, dockers, use_docker: bool,
 
                     diff_time = (end_time - start_time) - (end_time_python - start_time_python)
 
+                    my_sandbox.flush_logs()
                     my_sandbox.pause()
 
                     try:
